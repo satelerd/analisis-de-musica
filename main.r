@@ -29,3 +29,41 @@ plot.PCA(pca_df,
          select = "contrib5",
          invisible = "quali")
 plot.PCA(pca_df, choix = c("var"))
+
+
+# Eliminamos los outliers para evitar problemas ------------------ Esto hay que hacerle fine tuning
+df_no_out <- numeric_df[-c(67066,26176),]
+df_scale_no_out <- scale(df_no_out)
+str(df_scale_no_out)
+
+# Usamos Elbow Method para poder obtener la cantidad de clusters optima
+RNGkind(sample.kind = "Rounding")
+kmeansTunning <- function(data, maxK) {
+  withinall <- NULL
+  total_k <- NULL
+  for (i in 2:maxK) {
+    set.seed(1)
+    temp <- kmeans(data,i)$tot.withinss
+    withinall <- append(withinall, temp)
+    total_k <- append(total_k,i)
+  }
+  plot(x = total_k, y = withinall, type = "o", xlab = "Number of Cluster", ylab = "Total within")
+}
+
+kmeansTunning(df_scale_no_out, maxK = 8)
+# Obtenemos que 6 clusters es lo ideal
+
+
+# Hacemos el k-means con 6 clusters
+RNGkind(sample.kind = "Rounding")
+set.seed(100)
+spot_km <- kmeans(x = df_scale_no_out,centers = 6)
+
+# Visualizamos
+fviz_cluster(spot_km, data = df_scale_no_out)
+
+#FUNCION  
+#pedir input
+#revisar el df
+#ver cluster
+
