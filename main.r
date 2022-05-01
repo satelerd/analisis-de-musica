@@ -62,6 +62,12 @@ spot_km <- kmeans(x = songs_scale_no_out,centers = 6)
 # Visualizamos
 fviz_cluster(spot_km, data = songs_scale_no_out)
 
+
+# ------------------------------------------
+#Agregamos los clusters a la tabla
+songs_no_out$cluster <- spot_km$cluster
+rmarkdown::paged_table(songs_no_out)
+
 #FUNCION  
 #pedir input
 #revisar el df
