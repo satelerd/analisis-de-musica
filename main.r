@@ -68,8 +68,39 @@ fviz_cluster(spot_km, data = songs_scale_no_out)
 songs_no_out$cluster <- spot_km$cluster
 rmarkdown::paged_table(songs_no_out)
 
-#FUNCION  
-#pedir input
-#revisar el df
-#ver cluster
+# Ahora hay que crear una funcion en la que pida un input del tracknumber y nos devuelva el cluster.
+create_playlist <- function(track_number) {
+  cluster <- songs_no_out$cluster[track_number]
+  # print(cluster)
 
+  # create a loop to get all the tracks in the same cluster
+  track_list <- list()
+  for (i in 1:nrow(songs_no_out)) {
+    if (songs_no_out$cluster[i] == cluster) {
+      #print(songs_no_out$track_number[i])
+      track_list <- append(track_list, i)
+    }
+  }
+
+  #create a loop from the track list and for every track, get the "duration_ms" and add it to a variable starting at 0
+  duration_ms <- 0
+  max_duration <- 10800000
+  for (i in track_list) {
+    duration_ms <- duration_ms + songs_no_out$duration_ms[i]
+    # make a if that checks if the duration is greater than the max duration
+    if (duration_ms > max_duration) {
+      # stop the loop
+      last_track <- i
+      break
+    }
+  }
+  
+  # now delete all tracks from tracklist that come after the last track
+  track_list <- track_list[1:last_track]
+  
+  return(track_list)
+}
+
+playlist <- create_playlist(1)
+# print the playlist
+print(playlist)
