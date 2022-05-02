@@ -11,6 +11,7 @@ rds <- readRDS("beats.rds")
 songs_df <- as.data.frame(rds)
 
 
+#----------------------------------------------------------
 #PUNTO 1 (Limpieza de datos)
 #optimize <- 1
 optimize <- 200000
@@ -53,7 +54,9 @@ kmeansTunning <- function(data, maxK) {
 kmeansTunning(songs_scale, maxK = 8)
 # Obtenemos que 6 clusters es lo ideal
 
-# PUNTO 3 (Selección de hiperparámetros para el modelo 1)
+
+#----------------------------------------------------------
+# PUNTO 2 (Selección de hiperparámetros para el modelo 1)
 # K-means
 
 RNGkind(sample.kind = "Rounding")
@@ -68,6 +71,7 @@ songs_numeric_df$cluster <- spot_km$cluster
 rmarkdown::paged_table(songs_numeric_df)
 
 
+#----------------------------------------------------------
 # PUNTO 3 (Selección de hiperparámetros para el modelo 2)
 #K-medoids clustering (PAM)
 
@@ -86,6 +90,7 @@ fviz_cluster(object = pam_clusters, data = datos, ellipse.type = "t",
   theme(legend.position = "none")
 
 
+#----------------------------------------------------------
 #Punto 4 (Selección del modelo final entre modelo 1 y modelo 2)
 # Ahora hay que crear una funcion en la que pida un input del tracknumber y nos devuelva el cluster.
 create_playlist <- function(track_number) {
