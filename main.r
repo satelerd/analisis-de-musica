@@ -10,10 +10,13 @@ library("cluster")
 rds <- readRDS("beats.rds")
 songs_df <- as.data.frame(rds)
 
-#PUNTO 1 (Limpieza de datos)
 
-#songs_clean_df <- df[-c(100000:nrow(df)), ]    # Descomentar para optimizar (data incompleto)
-songs_clean_df = subset(songs_df, select = -c(key_mode, mode_name, key_name, album_name, external_urls.spotify, track_uri, type, track_preview_url, is_local, track_href, explicit, disc_number, time_signature, analysis_url, mode, album_release_date_precision, album_release_year, album_release_date, album_type, album_id, artist_id))
+#PUNTO 1 (Limpieza de datos)
+#optimize <- 1
+optimize <- 200000
+songs_clean_df <- head(songs_df, - optimize)    
+songs_clean_df = subset(songs_clean_df, select = -c(key_mode, mode_name, key_name, album_name, external_urls.spotify, track_uri, type, track_preview_url, is_local, track_href, explicit, disc_number, time_signature, analysis_url, mode, album_release_date_precision, album_release_year, album_release_date, album_type, album_id, artist_id))
+
 songs_numeric_df = subset(songs_clean_df, select = -c(artist_name, track_id, track_name)) # Eliminamos los datos que no son numericos
 
 # Ahora realizamos una reduccion de dimencionalidad
@@ -22,7 +25,6 @@ songs_pca <- PCA(songs_scale,
                    scale.unit = FALSE,
                    graph = F, 
                    ncp = 10) #default: 5)
-
 songs_pca$eig
 
 # Graficamos los datos
@@ -33,12 +35,6 @@ plot.PCA(songs_pca,
          invisible = "quali")
 plot.PCA(songs_pca, choix = c("var"))
 
-# Eliminamos los outliers para evitar problemas ------------------ Esto hay que hacerle fine tuning
-songs_no_out <- songs_numeric_df[-c(67066,26176),]
-songs_scale_no_out <- scale(songs_no_out)
-# str(songs_scale_no_out)
-
-#PUNTO 2 (Selección de hiperparámetros para el modelo 1)
 
 # Usamos Elbow Method para poder obtener la cantidad de clusters optima
 RNGkind(sample.kind = "Rounding")
@@ -54,22 +50,28 @@ kmeansTunning <- function(data, maxK) {
   plot(x = total_k, y = withinall, type = "o", xlab = "Number of Cluster", ylab = "Total within")
 }
 
-kmeansTunning(songs_scale_no_out, maxK = 8)
-
+kmeansTunning(songs_scale, maxK = 8)
 # Obtenemos que 6 clusters es lo ideal
-# Hacemos el k-means con 6 clusters
+
+# PUNTO 3 (Selección de hiperparámetros para el modelo 1)
+# K-means
 
 RNGkind(sample.kind = "Rounding")
 set.seed(100)
-spot_km <- kmeans(x = songs_scale_no_out,centers = 6)
+spot_km <- kmeans(x = songs_scale,centers = 6)
 
 # Visualizamos
-fviz_cluster(spot_km, data = songs_scale_no_out)
+fviz_cluster(spot_km, data = songs_scale)
 
-#PUNTO 3 (Selección de hiperparámetros para el modelo 2)
+#Agregamos los clusters a la tabla
+songs_numeric_df$cluster <- spot_km$cluster
+rmarkdown::paged_table(songs_numeric_df)
+
+
+# PUNTO 3 (Selección de hiperparámetros para el modelo 2)
 #K-medoids clustering (PAM)
 
-datos1 <- as.data.frame(songs_scale_no_out)
+datos1 <- as.data.frame(songs_scale)
 datos <- datos1[-c(65536:nrow(df)), ]
 fviz_nbclust(x = datos, FUNcluster = pam, method = "wss", k.max = 15,
              diss = dist(datos, method = "manhattan"))
@@ -83,6 +85,31 @@ fviz_cluster(object = pam_clusters, data = datos, ellipse.type = "t",
   labs(title = "Resultados clustering PAM") +
   theme(legend.position = "none")
 
+
 #Punto 4 (Selección del modelo final entre modelo 1 y modelo 2)
+# Ahora hay que crear una funcion en la que pida un input del tracknumber y nos devuelva el cluster.
+create_playlist <- function(track_number) {
+  cluster <- songs_numeric_df$cluster[track_number]
+  # print(cluster)
+
+  # Loop para sacar canciones que pertenecen al mismo cluster que el input
+  duration_ms <- 0
+  max_duration <- 10800000
+  track_list <- list()
+  while (duration_ms < max_duration) {
+    random_track <- sample(1:nrow(songs_numeric_df), 1)
+    print(random_track)
+    print(songs_numeric_df$cluster[random_track])
+    if (songs_numeric_df$cluster[random_track] == cluster) {
+      track_list <- append(track_list, random_track)
+      duration_ms <- duration_ms + songs_numeric_df$duration_ms[random_track]
+    }
+  }
+  return(track_list)
+}
+
+
+playlist <- create_playlist(29521)
+print(playlist)
 
 
