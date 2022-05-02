@@ -1,3 +1,5 @@
+# Grupo conformado por: Sebastian Diaz, Daniel Sateler y Valentina Kaufmann
+
 library("ggplot2")
 library("FactoMineR")
 library("factoextra")
